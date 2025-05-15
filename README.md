@@ -1,4 +1,4 @@
-# LingAlg
+# LinAlg
 An OpenGL-compatible linear algebra library for the Zig programming language,
 intended for use in game development and graphics programming.
 
