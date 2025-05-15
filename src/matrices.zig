@@ -1,0 +1,335 @@
+const std = @import("std");
+const q = @import("quaternion.zig");
+
+/// A columm-major 4x4 matrix type.
+pub fn Mat4(N: type) type {
+    const Q = q.Quat(N);
+    const epsilon = std.math.floatEps(N) * 5.0;
+    const v = @import("vectors.zig").Vectors(N);
+
+    return struct {
+        const Self = @This();
+
+        pub const identity = Self{ .m = .{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 } };
+        pub const zero = Self{ .m = .{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } };
+
+        m: [16]N,
+
+        // --- CONSTRUCTORS ---
+
+        /// Utility to initialize a matrix row-by-row. This essentially tranposes the input
+        /// so that the matrix is stored in column-major order.
+        pub fn initRows(x: [4]f32, y: [4]f32, z: [4]f32, w: [4]f32) Self {
+            return .{
+                .m = .{
+                    x[0], y[0], z[0], w[0], //
+                    x[1], y[1], z[1], w[1], //
+                    x[2], y[2], z[2], w[2], //
+                    x[3], y[3], z[3], w[3], //
+                },
+            };
+        }
+
+        /// Creates a "look at" matrix at position `from` looking at `to`.
+        pub fn lookAt(from: @Vector(3, N), to: @Vector(3, N), up: @Vector(3, N)) Self {
+            const forward = v.normalize(3, from - to);
+            const right = v.cross(up, forward);
+            const new_up = v.cross(forward, right);
+
+            // Create rotation matrix (first 3x3 part)
+            var result = identity;
+            result.m[0] = right[0];
+            result.m[1] = right[1];
+            result.m[2] = right[2];
+
+            result.m[4] = new_up[0];
+            result.m[5] = new_up[1];
+            result.m[6] = new_up[2];
+
+            result.m[8] = forward[0];
+            result.m[9] = forward[1];
+            result.m[10] = forward[2];
+
+            // Apply translation
+            result.m[12] = -v.dot(3, right, from);
+            result.m[13] = -v.dot(3, new_up, from);
+            result.m[14] = -v.dot(3, forward, from);
+
+            return result;
+        }
+
+        /// Creates an orthographic projection matrix.
+        pub fn orthographic(left: N, right: N, bottom: N, top: N, near: N, far: N) Self {
+            var result = identity;
+
+            // Scale
+            result.m[0] = 2.0 / (right - left);
+            result.m[5] = 2.0 / (top - bottom);
+            result.m[10] = -2.0 / (far - near);
+
+            // Translation
+            result.m[12] = -(right + left) / (right - left);
+            result.m[13] = -(top + bottom) / (top - bottom);
+            result.m[14] = -(far + near) / (far - near);
+
+            return result;
+        }
+
+        /// Creates a perspective projection matrix. `fov` is in radians.
+        pub fn perspective(aspect: N, fov: N, near: N, far: N) Self {
+            const tan_half_fov = std.math.tan(fov / 2.0);
+
+            var result = zero;
+            result.m[0] = 1.0 / (aspect * tan_half_fov);
+            result.m[5] = 1.0 / tan_half_fov;
+            result.m[10] = -(far + near) / (far - near);
+            result.m[11] = -1.0;
+            result.m[14] = -(2.0 * far * near) / (far - near);
+            result.m[15] = 0.0;
+            return result;
+        }
+
+        /// Creates a 3D transformation matrix.
+        pub fn transform(translation: @Vector(3, N), rotation: Q, scale: @Vector(3, N)) Self {
+            var result = identity;
+
+            // Calculate rotation coefficients
+            const xx = rotation.x * rotation.x;
+            const xy = rotation.x * rotation.y;
+            const xz = rotation.x * rotation.z;
+            const xw = rotation.x * rotation.w;
+
+            const yy = rotation.y * rotation.y;
+            const yz = rotation.y * rotation.z;
+            const yw = rotation.y * rotation.w;
+
+            const zz = rotation.z * rotation.z;
+            const zw = rotation.z * rotation.w;
+
+            // Main diagonal
+            result.m[0] = 1.0 - 2.0 * (yy + zz);
+            result.m[5] = 1.0 - 2.0 * (xx + zz);
+            result.m[10] = 1.0 - 2.0 * (xx + yy);
+
+            // Off-diagonal
+            result.m[1] = 2.0 * (xy - zw);
+            result.m[2] = 2.0 * (xz + yw);
+
+            result.m[4] = 2.0 * (xy + zw);
+            result.m[6] = 2.0 * (yz - xw);
+
+            result.m[8] = 2.0 * (xz - yw);
+            result.m[9] = 2.0 * (yz + xw);
+
+            // Apply scale - multiply the first three rows by the scale components
+            result.m[0] *= scale[0];
+            result.m[1] *= scale[0];
+            result.m[2] *= scale[0];
+
+            result.m[4] *= scale[1];
+            result.m[5] *= scale[1];
+            result.m[6] *= scale[1];
+
+            result.m[8] *= scale[2];
+            result.m[9] *= scale[2];
+            result.m[10] *= scale[2];
+
+            // Apply translation
+            result.m[12] = translation[0];
+            result.m[13] = translation[1];
+            result.m[14] = translation[2];
+
+            return result;
+        }
+
+        // --- PROPERTIES ---
+
+        /// The determinant of this matrix.
+        pub fn determinant(self: Self) N {
+            const m = self.m;
+
+            // Calculate the cofactors for the first row
+            const c00 = m[5] * (m[10] * m[15] - m[11] * m[14]) -
+                m[6] * (m[9] * m[15] - m[11] * m[13]) +
+                m[7] * (m[9] * m[14] - m[10] * m[13]);
+
+            const c01 = m[4] * (m[10] * m[15] - m[11] * m[14]) -
+                m[6] * (m[8] * m[15] - m[11] * m[12]) +
+                m[7] * (m[8] * m[14] - m[10] * m[12]);
+
+            const c02 = m[4] * (m[9] * m[15] - m[11] * m[13]) -
+                m[5] * (m[8] * m[15] - m[11] * m[12]) +
+                m[7] * (m[8] * m[13] - m[9] * m[12]);
+
+            const c03 = m[4] * (m[9] * m[14] - m[10] * m[13]) -
+                m[5] * (m[8] * m[14] - m[10] * m[12]) +
+                m[6] * (m[8] * m[13] - m[9] * m[12]);
+
+            // Calculate the determinant using the cofactors
+            return m[0] * c00 - m[1] * c01 + m[2] * c02 - m[3] * c03;
+        }
+
+        /// Returns the inverse of this matrix. If there is no inverse,
+        /// the matrix will be all `NaN`s.
+        pub fn inverse(self: Self) Self {
+            const m = self.m;
+
+            // Calculate cofactors and determinant
+            const c00 = m[5] * (m[10] * m[15] - m[11] * m[14]) -
+                m[6] * (m[9] * m[15] - m[11] * m[13]) +
+                m[7] * (m[9] * m[14] - m[10] * m[13]);
+
+            const c01 = m[4] * (m[10] * m[15] - m[11] * m[14]) -
+                m[6] * (m[8] * m[15] - m[11] * m[12]) +
+                m[7] * (m[8] * m[14] - m[10] * m[12]);
+
+            const c02 = m[4] * (m[9] * m[15] - m[11] * m[13]) -
+                m[5] * (m[8] * m[15] - m[11] * m[12]) +
+                m[7] * (m[8] * m[13] - m[9] * m[12]);
+
+            const c03 = m[4] * (m[9] * m[14] - m[10] * m[13]) -
+                m[5] * (m[8] * m[14] - m[10] * m[12]) +
+                m[6] * (m[8] * m[13] - m[9] * m[12]);
+
+            const c10 = m[1] * (m[10] * m[15] - m[11] * m[14]) -
+                m[2] * (m[9] * m[15] - m[11] * m[13]) +
+                m[3] * (m[9] * m[14] - m[10] * m[13]);
+
+            const c11 = m[0] * (m[10] * m[15] - m[11] * m[14]) -
+                m[2] * (m[8] * m[15] - m[11] * m[12]) +
+                m[3] * (m[8] * m[14] - m[10] * m[12]);
+
+            const c12 = m[0] * (m[9] * m[15] - m[11] * m[13]) -
+                m[1] * (m[8] * m[15] - m[11] * m[12]) +
+                m[3] * (m[8] * m[13] - m[9] * m[12]);
+
+            const c13 = m[0] * (m[9] * m[14] - m[10] * m[13]) -
+                m[1] * (m[8] * m[14] - m[10] * m[12]) +
+                m[2] * (m[8] * m[13] - m[9] * m[12]);
+
+            const c20 = m[1] * (m[6] * m[15] - m[7] * m[14]) -
+                m[2] * (m[5] * m[15] - m[7] * m[13]) +
+                m[3] * (m[5] * m[14] - m[6] * m[13]);
+
+            const c21 = m[0] * (m[6] * m[15] - m[7] * m[14]) -
+                m[2] * (m[4] * m[15] - m[7] * m[12]) +
+                m[3] * (m[4] * m[14] - m[6] * m[12]);
+
+            const c22 = m[0] * (m[5] * m[15] - m[7] * m[13]) -
+                m[1] * (m[4] * m[15] - m[7] * m[12]) +
+                m[3] * (m[4] * m[13] - m[5] * m[12]);
+
+            const c23 = m[0] * (m[5] * m[14] - m[6] * m[13]) -
+                m[1] * (m[4] * m[14] - m[6] * m[12]) +
+                m[2] * (m[4] * m[13] - m[5] * m[12]);
+
+            const c30 = m[1] * (m[6] * m[11] - m[7] * m[10]) -
+                m[2] * (m[5] * m[11] - m[7] * m[9]) +
+                m[3] * (m[5] * m[10] - m[6] * m[9]);
+
+            const c31 = m[0] * (m[6] * m[11] - m[7] * m[10]) -
+                m[2] * (m[4] * m[11] - m[7] * m[8]) +
+                m[3] * (m[4] * m[10] - m[6] * m[8]);
+
+            const c32 = m[0] * (m[5] * m[11] - m[7] * m[9]) -
+                m[1] * (m[4] * m[11] - m[7] * m[8]) +
+                m[3] * (m[4] * m[9] - m[5] * m[8]);
+
+            const c33 = m[0] * (m[5] * m[10] - m[6] * m[9]) -
+                m[1] * (m[4] * m[10] - m[6] * m[8]) +
+                m[2] * (m[4] * m[9] - m[5] * m[8]);
+
+            // Calculate determinant
+            const det = m[0] * c00 - m[1] * c01 + m[2] * c02 - m[3] * c03;
+            const inv_det = 1.0 / det;
+            var result: Self = undefined;
+            result.m[0] = c00 * inv_det;
+            result.m[1] = -c10 * inv_det;
+            result.m[2] = c20 * inv_det;
+            result.m[3] = -c30 * inv_det;
+
+            result.m[4] = -c01 * inv_det;
+            result.m[5] = c11 * inv_det;
+            result.m[6] = -c21 * inv_det;
+            result.m[7] = c31 * inv_det;
+
+            result.m[8] = c02 * inv_det;
+            result.m[9] = -c12 * inv_det;
+            result.m[10] = c22 * inv_det;
+            result.m[11] = -c32 * inv_det;
+
+            result.m[12] = -c03 * inv_det;
+            result.m[13] = c13 * inv_det;
+            result.m[14] = -c23 * inv_det;
+            result.m[15] = c33 * inv_det;
+            return result;
+        }
+
+        /// Returns the transpose of this matrix.
+        pub fn transpose(self: Self) Self {
+            var result: Self = undefined;
+            inline for (0..4) |row| {
+                inline for (0..4) |col| {
+                    result.m[col * 4 + row] = self.m[row * 4 + col];
+                }
+            }
+
+            return result;
+        }
+
+        // --- METHODS ---
+
+        /// Returns true if `self` is exactly equal to `other`.
+        pub fn eql(self: Self, other: Self) bool {
+            return std.mem.eql(N, &self.m, &other.m);
+        }
+
+        /// Format function for printing. One can use the `{d}` format specifier in the same was as printing a number.
+        pub fn format(self: Self, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
+            _ = options;
+            try writer.print("[[ {" ++ fmt ++ "} {" ++ fmt ++ "} {" ++ fmt ++ "} {" ++ fmt ++ "} ]\n", .{ self.m[0], self.m[4], self.m[8], self.m[12] });
+            try writer.print(" [ {" ++ fmt ++ "} {" ++ fmt ++ "} {" ++ fmt ++ "} {" ++ fmt ++ "} ]\n", .{ self.m[1], self.m[5], self.m[9], self.m[13] });
+            try writer.print(" [ {" ++ fmt ++ "} {" ++ fmt ++ "} {" ++ fmt ++ "} {" ++ fmt ++ "} ]\n", .{ self.m[2], self.m[6], self.m[10], self.m[14] });
+            try writer.print(" [ {" ++ fmt ++ "} {" ++ fmt ++ "} {" ++ fmt ++ "} {" ++ fmt ++ "} ]]", .{ self.m[3], self.m[7], self.m[11], self.m[15] });
+        }
+
+        /// Returns `self` * `other`.
+        pub fn mul(self: Self, other: Self) Self {
+            var result: @Vector(16, f32) = undefined;
+            inline for (0..4) |col| {
+                inline for (0..4) |row| {
+                    var sum: f32 = 0.0;
+                    inline for (0..4) |i| sum += self.m[i * 4 + row] * other.m[col * 4 + i];
+                    result[col * 4 + row] = sum;
+                }
+            }
+
+            return .{ .m = result };
+        }
+
+        /// Multiplies a direction vector by this matrix, i.e. this only applies rotation.
+        pub fn multiplyDirection(self: Self, dir: @Vector(3, N)) @Vector(3, N) {
+            const m = self.m;
+            return @Vector(3, N){
+                m[0] * dir[0] + m[4] * dir[1] + m[8] * dir[2],
+                m[1] * dir[0] + m[5] * dir[1] + m[9] * dir[2],
+                m[2] * dir[0] + m[6] * dir[1] + m[10] * dir[2],
+            };
+        }
+
+        /// Multiplies a point by this matrix, i.e. the point is scaled, rotated, and translated.
+        pub fn multiplyPoint(self: Self, point: @Vector(3, N)) @Vector(3, N) {
+            const m = self.m;
+            const x = m[0] * point[0] + m[4] * point[1] + m[8] * point[2] + m[12];
+            const y = m[1] * point[0] + m[5] * point[1] + m[9] * point[2] + m[13];
+            const z = m[2] * point[0] + m[6] * point[1] + m[10] * point[2] + m[14];
+            const w = m[3] * point[0] + m[7] * point[1] + m[11] * point[2] + m[15];
+            if (@abs(w) > epsilon) {
+                const inv_w = 1.0 / w;
+                return @Vector(3, N){ x * inv_w, y * inv_w, z * inv_w };
+            }
+
+            return @Vector(3, N){ x, y, z };
+        }
+    };
+}
