@@ -58,7 +58,7 @@ const linalg = b.dependency("linalg", .{
 	.optimize = optimize,
 });
 
-exe.addModule("linalg", linalg.module("linalg"));
+exe_mod.addImport("linalg", linalg.module("linalg"));
 ```
 
 ## Usage

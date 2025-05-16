@@ -1,24 +1,13 @@
 const std = @import("std");
 
-// Although this function looks imperative, note that its job is to
-// declaratively construct a build graph that will be executed by an external
-// runner.
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const lib_mod = b.createModule(.{
+    _ = b.addModule("linalg", .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
     });
-
-    const lib = b.addLibrary(.{
-        .linkage = .static,
-        .name = "linalg",
-        .root_module = lib_mod,
-    });
-
-    b.installArtifact(lib);
 
     const test_mod = b.createModule(.{
         .root_source_file = b.path("src/tests.zig"),
