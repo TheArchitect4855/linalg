@@ -7,7 +7,7 @@ pub fn Mat4(N: type) type {
     const epsilon = std.math.floatEps(N) * 5.0;
     const v = @import("vectors.zig").Vectors(N);
 
-    return struct {
+    return extern struct {
         const Self = @This();
 
         pub const identity = Self{ .m = .{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 } };
