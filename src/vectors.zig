@@ -47,7 +47,7 @@ pub fn Vectors(N: type) type {
         pub fn right(n: comptime_int) @Vector(n, N) {
             var v = zero(n);
             v[0] = 1.0;
-            return n;
+            return v;
         }
 
         /// A vector with the Y component equal to 1.
