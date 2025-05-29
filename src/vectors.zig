@@ -232,6 +232,11 @@ pub fn Vectors(N: type) type {
             return v * s;
         }
 
+        /// Returns the signed angle between 2 vectors.
+        pub fn signedAngle(a: @Vector(2, N), b: @Vector(2, N)) N {
+            return std.math.atan2(a[0] * b[1] - a[1] * b[0], a[0] * b[0] + a[1] * b[1]);
+        }
+
         /// Spherically interpolates between `a` and `b` by factor `t`.
         pub fn slerp(n: comptime_int, a: @Vector(n, N), b: @Vector(n, N), t: N) @Vector(n, N) {
             return slerpUnclamped(n, a, b, std.math.clamp(t, 0.0, 1.0));
