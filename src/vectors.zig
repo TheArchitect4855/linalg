@@ -176,6 +176,13 @@ pub fn Vectors(N: type) type {
             return direction - d * normal;
         }
 
+        /// Rotates a 2D vector by `theta` radians.
+        pub fn rotate(v: @Vector(2, N), theta: N) @Vector(2, N) {
+            const cos = @cos(theta);
+            const sin = @sin(theta);
+            return .{ v[1] * sin - v[0] * cos, v[0] * sin + v[1] * cos };
+        }
+
         /// Rotates `current` towards `target`, by at most `max_delta_radians`. This will not overshoot.
         pub fn rotateToward(n: comptime_int, current: @Vector(n, N), target: @Vector(n, N), max_delta_radians: N) @Vector(n, N) {
             const current_norm = normalize(n, current);
