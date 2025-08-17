@@ -180,7 +180,7 @@ pub fn Vectors(N: type) type {
         pub fn rotate(v: @Vector(2, N), theta: N) @Vector(2, N) {
             const cos = @cos(theta);
             const sin = @sin(theta);
-            return .{ v[1] * sin - v[0] * cos, v[0] * sin + v[1] * cos };
+            return .{ v[0] * cos - v[1] * sin, v[0] * sin + v[1] * cos };
         }
 
         /// Rotates `current` towards `target`, by at most `max_delta_radians`. This will not overshoot.
