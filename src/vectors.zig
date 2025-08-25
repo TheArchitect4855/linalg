@@ -152,7 +152,7 @@ pub fn Vectors(N: type) type {
         pub fn moveTowards(n: comptime_int, current: @Vector(n, N), target: @Vector(n, N), max_delta: N) @Vector(n, N) {
             const d = target - current;
             const dist = sqrMagnitude(n, d);
-            if (dist < max_delta * max_delta) return target;
+            if (dist <= max_delta * max_delta) return target;
 
             const dist_v: @Vector(n, N) = @splat(@sqrt(dist));
             const max_v: @Vector(n, N) = @splat(max_delta);
