@@ -64,7 +64,7 @@ exe_mod.addImport("linalg", linalg.module("linalg"));
 ## Usage
 
 ```zig
-const linalg = @import("linalg");
+const linalg = @import("linalg").LinAlg(f32);
 
 const projection_matrix = linalg.Mat4.orthographic(-0.5, 0.5, -0.5, 0.5, 0.0, 100.0); // .perspective is also available
 
@@ -72,11 +72,6 @@ const quaternion = linalg.Quat.euler(0, std.math.pi * 0.5, 0); // Rotate 90 degr
 
 const vector = linalg.Vec3{1, 2, 3};
 const normalized = linalg.vec.normalize(3, vector); // The 3 is the vector dimension; most functions are generic over all vectors
-```
-
-You can even specialize on your own numeric types: (the default is `f32`)
-```zig
-const linalg = @import("linalg").LinAlg(f64); // 64-bit algebra!
 ```
 
 Browse the doc comments for more in-depth documentation.

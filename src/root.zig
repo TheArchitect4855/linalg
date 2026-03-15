@@ -1,5 +1,3 @@
-pub usingnamespace LinAlg(f32);
-
 pub fn LinAlg(N: type) type {
     return struct {
         pub const Mat4 = @import("matrices.zig").Mat4(N);
