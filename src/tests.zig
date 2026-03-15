@@ -1,5 +1,5 @@
 const std = @import("std");
-const root = @import("root.zig").LinAlg(f32);
+const root = @import("root.zig").With(f32);
 
 test "sanity" {
     std.debug.assert(1 + 1 == 2);

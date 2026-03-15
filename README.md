@@ -64,7 +64,7 @@ exe_mod.addImport("linalg", linalg.module("linalg"));
 ## Usage
 
 ```zig
-const linalg = @import("linalg").LinAlg(f32);
+const linalg = @import("linalg").With(f32); // Linear algebra with f32!
 
 const projection_matrix = linalg.Mat4.orthographic(-0.5, 0.5, -0.5, 0.5, 0.0, 100.0); // .perspective is also available
 

@@ -1,4 +1,4 @@
-pub fn LinAlg(N: type) type {
+pub fn With(N: type) type {
     return struct {
         pub const Mat4 = @import("matrices.zig").Mat4(N);
         pub const Quat = @import("quaternion.zig").Quat(N);
