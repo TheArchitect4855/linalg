@@ -2,7 +2,7 @@ const std = @import("std");
 const root = @import("root.zig").With(f32);
 
 test "sanity" {
-    std.debug.assert(1 + 1 == 2);
+    try std.testing.expectEqual(2, 1 + 1);
 }
 
 test "matrix look at" {
@@ -13,7 +13,7 @@ test "matrix look at" {
         .{ 0, 0, -1, 0 },
         .{ 0, 0, 0, 1 },
     );
-    std.debug.assert(m.eql(expected));
+    try std.testing.expectEqualDeep(expected, m);
 }
 
 test "matrix orthographic" {
@@ -24,7 +24,7 @@ test "matrix orthographic" {
         .{ 0, 0, -1, 0 },
         .{ 0, 0, 0, 1 },
     );
-    std.debug.assert(m.eql(expected));
+    try std.testing.expectEqualDeep(expected, m);
 }
 
 test "matrix perspective" {
@@ -35,7 +35,7 @@ test "matrix perspective" {
         .{ 0, 0, 0, 1 },
         .{ 0, 0, -1, 0 },
     );
-    std.debug.assert(m.eql(expected));
+    try std.testing.expectEqualDeep(expected, m);
 }
 
 test "matrix transform" {
@@ -50,7 +50,7 @@ test "matrix transform" {
         .{ 0, 0, -1, 1 },
         .{ 0, 0, 0, 1 },
     );
-    std.debug.assert(m.eql(expected));
+    try std.testing.expectEqualDeep(expected, m);
 }
 
 test "matrix determinant" {
@@ -61,7 +61,7 @@ test "matrix determinant" {
         .{ 12, 13, 14, 15 },
     );
     const det = m.determinant();
-    std.debug.assert(det == 0);
+    try std.testing.expectEqual(0, det);
 }
 
 test "matrix inverse" {
@@ -73,7 +73,7 @@ test "matrix inverse" {
     );
     const m_inv = m.inverse();
     const i = m.mul(m_inv);
-    std.debug.assert(i.eql(.identity));
+    try std.testing.expectEqualDeep(root.Mat4.identity, i);
 }
 
 test "matrix transpose" {
@@ -82,9 +82,9 @@ test "matrix transpose" {
         .{ 4, 5, 6, 7 },
         .{ 8, 9, 10, 11 },
         .{ 12, 13, 14, 15 },
-    );
+    ).transpose();
     const expected = root.Mat4{ .m = .{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 } };
-    std.debug.assert(m.transpose().eql(expected));
+    try std.testing.expectEqualDeep(expected, m);
 }
 
 test "matrix multiply direction" {
@@ -93,7 +93,7 @@ test "matrix multiply direction" {
     const m = root.Mat4.transform(@splat(1.0), .{ .w = 0, .x = 0, .y = 1, .z = 0 }, @splat(1.0));
     const dir = m.multiplyDirection(root.Vec3{ 1, 0, 0 });
     const expected = root.Vec3{ -1, 0, 0 };
-    std.debug.assert(root.eql(dir, expected));
+    try std.testing.expectEqualDeep(expected, dir);
 }
 
 test "matrix multiply point" {
@@ -101,41 +101,41 @@ test "matrix multiply point" {
     const m = root.Mat4.transform(@splat(1.0), .{ .w = 0, .x = 0, .y = 1, .z = 0 }, @splat(1.0));
     const point = m.multiplyPoint(root.Vec3{ 1, 0, 0 });
     const expected = root.Vec3{ 0, 1, 1 };
-    std.debug.assert(root.eql(point, expected));
+    try std.testing.expectEqualDeep(expected, point);
 }
 
 test "quaternion angle axis" {
     // 180 degrees around X axis
     const q = root.Quat.angleAxis(std.math.pi, root.Vec3{ 1, 0, 0 });
     const expected = root.Quat{ .w = 0, .x = 1, .y = 0, .z = 0 };
-    return std.debug.assert(q.eqlApprox(expected));
+    try std.testing.expect(expected.eqlApprox(q));
 }
 
 test "quaternion euler" {
     // 180 degrees around Y axis
     const q = root.Quat.euler(0, std.math.pi, 0);
     const expected = root.Quat{ .w = 0, .x = 0, .y = 1, .z = 0 };
-    return std.debug.assert(q.eqlApprox(expected));
+    try std.testing.expect(expected.eqlApprox(q));
 }
 
 test "quaternion look rotation" {
     const q = root.Quat.lookRotation(.{ 0, 0, 1 }, .{ 0, 1, 0 });
     const expected = root.Quat.identity;
-    std.debug.assert(q.eql(expected));
+    try std.testing.expectEqualDeep(expected, q);
 }
 
 test "quaternion angle" {
     const a = root.Quat.euler(0, 0, 0);
     const b = root.Quat.euler(std.math.pi, 0, 0);
     const delta = a.angle(b);
-    std.debug.assert(std.math.approxEqRel(f32, delta, std.math.pi, 1e-6));
+    try std.testing.expectApproxEqRel(std.math.pi, delta, 1e-6);
 }
 
 test "quaternion inverse" {
     const q = root.Quat{ .w = 0, .x = 1, .y = 2, .z = 3 };
     const q_inv = q.inverse();
     const i = q.mul(q_inv);
-    std.debug.assert(i.eql(root.Quat.identity));
+    try std.testing.expectEqualDeep(root.Quat.identity, i);
 }
 
 test "quaternion lerp" {
@@ -143,7 +143,7 @@ test "quaternion lerp" {
     const b = root.Quat.euler(std.math.pi, 0, 0);
     const c = a.lerp(b, 0.5);
     const expected = (root.Quat{ .w = 0.5, .x = 0.5, .y = 0.0, .z = 0.0 }).normalized();
-    std.debug.assert(c.eql(expected));
+    try std.testing.expectEqualDeep(expected, c);
 }
 
 test "quaternion rotate towards" {
@@ -151,7 +151,7 @@ test "quaternion rotate towards" {
     const b = root.Quat{ .w = 0, .x = 1, .y = 0, .z = 0 };
     const c = a.rotateTowards(b, std.math.pi * 0.5);
     const expected = root.Quat.euler(std.math.pi * 0.5, 0, 0);
-    std.debug.assert(c.eqlApprox(expected));
+    try std.testing.expect(expected.eqlApprox(c));
 }
 
 test "quaternion slerp" {
@@ -159,35 +159,35 @@ test "quaternion slerp" {
     const b = root.Quat{ .w = 0, .x = 1, .y = 0, .z = 0 };
     const c = a.slerp(b, 0.5);
     const expected = root.Quat.euler(std.math.pi * 0.5, 0, 0);
-    std.debug.assert(c.eql(expected));
+    try std.testing.expect(expected.eqlApprox(c));
 }
 
 test "vector angle" {
     const a = root.Vec3{ 1, 0, 0 };
     const b = root.Vec3{ 0, 1, 0 };
     const angle = root.angle(a, b);
-    std.debug.assert(std.math.approxEqRel(f32, angle, std.math.pi * 0.5, 1e-6));
+    try std.testing.expectApproxEqRel(std.math.pi * 0.5, angle, 1e-6);
 }
 
 test "vector clamp magnitude" {
     const v = root.Vec3{ 1, 2, 3 };
     const v_clamped = root.clampMagnitude(v, 1);
     const expected = root.normalize(v);
-    std.debug.assert(root.eql(v_clamped, expected));
+    try std.testing.expectEqualDeep(expected, v_clamped);
 }
 
 test "vector distance" {
     const a = root.Vec3{ 1, 0, 0 };
     const b = root.Vec3{ -1, 0, 0 };
     const distance = root.distance(a, b);
-    std.debug.assert(distance == 2);
+    try std.testing.expectEqual(2, distance);
 }
 
 test "vector extend" {
     const v2 = root.Vec2{ 1, 2 };
     const v3 = root.extend(2, v2, 3);
     const expected = root.Vec3{ 1, 2, 3 };
-    std.debug.assert(root.eql(v3, expected));
+    try std.testing.expectEqualDeep(expected, v3);
 }
 
 test "vector lerp" {
@@ -195,7 +195,7 @@ test "vector lerp" {
     const b = root.Vec3{ 0, 1, 0 };
     const c = root.lerp(a, b, 0.5);
     const expected = root.Vec3{ 0.5, 0.5, 0 };
-    std.debug.assert(root.eql(c, expected));
+    try std.testing.expectEqualDeep(expected, c);
 }
 
 test "vector move towards" {
@@ -203,14 +203,14 @@ test "vector move towards" {
     const b = root.Vec3{ 0, 0, 1 };
     const c = root.moveTowards(a, b, 0.5);
     const expected = root.Vec3{ 0, 0, 0.5 };
-    std.debug.assert(root.eql(c, expected));
+    try std.testing.expectEqualDeep(expected, c);
 }
 
 test "vector perpendicular" {
     const v = root.Vec2{ 0, 1 };
     const p = root.perpendicular(v);
     const expected = root.Vec2{ -1, 0 };
-    std.debug.assert(root.eql(p, expected));
+    try std.testing.expectEqualDeep(expected, p);
 }
 
 test "vector project" {
@@ -218,7 +218,7 @@ test "vector project" {
     const n = root.Vec3{ 0, 1, 0 };
     const p = root.project(v, n);
     const expected = root.Vec3{ 0, 5, 0 };
-    std.debug.assert(root.eql(p, expected));
+    try std.testing.expectEqualDeep(expected, p);
 }
 
 test "vector reflect" {
@@ -226,7 +226,7 @@ test "vector reflect" {
     const n = root.Vec3{ 0, 1, 0 };
     const r = root.reflect(v, n);
     const expected = root.normalize(root.Vec3{ 1, 1, 0 });
-    std.debug.assert(root.eql(r, expected));
+    try std.testing.expectEqualDeep(expected, r);
 }
 
 test "vector rotate toward" {
@@ -234,14 +234,14 @@ test "vector rotate toward" {
     const b = root.Vec3{ 0, 1, 0 };
     const c = root.rotateToward(a, b, std.math.pi * 0.25);
     const expected = root.normalize(root.Vec3{ 0.5, 0.5, 0 });
-    std.debug.assert(root.eql(c, expected));
+    try std.testing.expectEqualDeep(expected, c);
 }
 
 test "vector scale" {
     const v: root.Vec3 = @splat(1.0);
     const scaled = root.scale(v, 5);
     const expected: root.Vec3 = @splat(5.0);
-    std.debug.assert(root.eql(scaled, expected));
+    try std.testing.expectEqualDeep(expected, scaled);
 }
 
 test "vector slerp" {
@@ -249,5 +249,5 @@ test "vector slerp" {
     const b = root.Vec3{ 0, 1, 0 };
     const c = root.slerp(a, b, 0.5);
     const expected = root.normalize(root.Vec3{ 0.5, 0.5, 0 });
-    std.debug.assert(root.eql(c, expected));
+    try std.testing.expectEqualDeep(expected, c);
 }
