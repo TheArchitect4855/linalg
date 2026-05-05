@@ -117,6 +117,17 @@ pub fn Quat(N: type) type {
             return 2.0 * std.math.acos(@abs(self.dot(other)));
         }
 
+        /// Returns the conjugate of this quaternion. For unit quaternions, this
+        /// is the same as the inverse, but calculating this is faster.
+        pub fn conjugate(self: Self) Self {
+            return .{
+                .w = self.w,
+                .x = -self.x,
+                .y = -self.y,
+                .z = -self.z,
+            };
+        }
+
         /// Returns the dot product of `a` and `b`.
         pub fn dot(a: Self, b: Self) N {
             return a.w * b.w + a.x * b.x + a.y * b.y + a.z * b.z;
@@ -150,7 +161,6 @@ pub fn Quat(N: type) type {
 
         /// Returns the inverse of this quaternion.
         pub fn inverse(self: Self) Self {
-            // For unit quaternions, the inverse is the conjugate
             const len_sq = self.w * self.w + self.x * self.x + self.y * self.y + self.z * self.z;
             const inv_len_sq = 1.0 / len_sq;
             return Self{

@@ -131,6 +131,13 @@ test "quaternion angle" {
     try std.testing.expectApproxEqRel(std.math.pi, delta, 1e-6);
 }
 
+test "quaternion conjugate" {
+    const q = root.Quat{ .w = 1, .x = 2, .y = 3, .z = 4 };
+    const r = q.conjugate();
+    const expected = root.Quat{ .w = 1, .x = -2, .y = -3, .z = -4 };
+    try std.testing.expectEqualDeep(expected, r);
+}
+
 test "quaternion inverse" {
     const q = root.Quat{ .w = 0, .x = 1, .y = 2, .z = 3 };
     const q_inv = q.inverse();
