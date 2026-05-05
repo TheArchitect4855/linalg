@@ -6,7 +6,7 @@ test "sanity" {
 }
 
 test "matrix look at" {
-    const m = root.Mat4.lookAt(root.vec.zero(3), root.vec.forward(3), root.vec.up(3));
+    const m = root.Mat4.lookAt(@splat(0), .{ 0, 0, 1.0 }, .{ 0, 1, 0 });
     const expected = root.Mat4.initRows(
         .{ -1, 0, 0, 0 },
         .{ 0, 1, 0, 0 },
@@ -40,9 +40,9 @@ test "matrix perspective" {
 
 test "matrix transform" {
     const m = root.Mat4.transform(
-        root.vec.forward(3),
+        .{ 0, 0, 1 },
         root.Quat{ .w = 0, .x = 0, .y = 1, .z = 0 },
-        root.vec.one(3),
+        @splat(1),
     );
     const expected = root.Mat4.initRows(
         .{ -1, 0, 0, 0 },
@@ -90,18 +90,18 @@ test "matrix transpose" {
 test "matrix multiply direction" {
     // Rotate vector 180 degrees around Y
     // Translation & scale should have no effect
-    const m = root.Mat4.transform(root.vec.one(3), .{ .w = 0, .x = 0, .y = 1, .z = 0 }, root.vec.one(3));
+    const m = root.Mat4.transform(@splat(1.0), .{ .w = 0, .x = 0, .y = 1, .z = 0 }, @splat(1.0));
     const dir = m.multiplyDirection(root.Vec3{ 1, 0, 0 });
     const expected = root.Vec3{ -1, 0, 0 };
-    std.debug.assert(root.vec.eql(3, dir, expected));
+    std.debug.assert(root.eql(dir, expected));
 }
 
 test "matrix multiply point" {
     // Rotate vector 180 degrees around Y and translate
-    const m = root.Mat4.transform(root.vec.one(3), .{ .w = 0, .x = 0, .y = 1, .z = 0 }, root.vec.one(3));
+    const m = root.Mat4.transform(@splat(1.0), .{ .w = 0, .x = 0, .y = 1, .z = 0 }, @splat(1.0));
     const point = m.multiplyPoint(root.Vec3{ 1, 0, 0 });
     const expected = root.Vec3{ 0, 1, 1 };
-    std.debug.assert(root.vec.eql(3, point, expected));
+    std.debug.assert(root.eql(point, expected));
 }
 
 test "quaternion angle axis" {
@@ -119,7 +119,7 @@ test "quaternion euler" {
 }
 
 test "quaternion look rotation" {
-    const q = root.Quat.lookRotation(root.vec.forward(3), root.vec.up(3));
+    const q = root.Quat.lookRotation(.{ 0, 0, 1 }, .{ 0, 1, 0 });
     const expected = root.Quat.identity;
     std.debug.assert(q.eql(expected));
 }
@@ -165,89 +165,89 @@ test "quaternion slerp" {
 test "vector angle" {
     const a = root.Vec3{ 1, 0, 0 };
     const b = root.Vec3{ 0, 1, 0 };
-    const angle = root.vec.angle(3, a, b);
+    const angle = root.angle(a, b);
     std.debug.assert(std.math.approxEqRel(f32, angle, std.math.pi * 0.5, 1e-6));
 }
 
 test "vector clamp magnitude" {
     const v = root.Vec3{ 1, 2, 3 };
-    const v_clamped = root.vec.clampMagnitude(3, v, 1);
-    const expected = root.vec.normalize(3, v);
-    std.debug.assert(root.vec.eql(3, v_clamped, expected));
+    const v_clamped = root.clampMagnitude(v, 1);
+    const expected = root.normalize(v);
+    std.debug.assert(root.eql(v_clamped, expected));
 }
 
 test "vector distance" {
     const a = root.Vec3{ 1, 0, 0 };
     const b = root.Vec3{ -1, 0, 0 };
-    const distance = root.vec.distance(3, a, b);
+    const distance = root.distance(a, b);
     std.debug.assert(distance == 2);
 }
 
 test "vector extend" {
     const v2 = root.Vec2{ 1, 2 };
-    const v3 = root.vec.extend(2, v2, 3);
+    const v3 = root.extend(2, v2, 3);
     const expected = root.Vec3{ 1, 2, 3 };
-    std.debug.assert(root.vec.eql(3, v3, expected));
+    std.debug.assert(root.eql(v3, expected));
 }
 
 test "vector lerp" {
     const a = root.Vec3{ 1, 0, 0 };
     const b = root.Vec3{ 0, 1, 0 };
-    const c = root.vec.lerp(3, a, b, 0.5);
+    const c = root.lerp(a, b, 0.5);
     const expected = root.Vec3{ 0.5, 0.5, 0 };
-    std.debug.assert(root.vec.eql(3, c, expected));
+    std.debug.assert(root.eql(c, expected));
 }
 
 test "vector move towards" {
     const a = root.Vec3{ 0, 0, 0 };
     const b = root.Vec3{ 0, 0, 1 };
-    const c = root.vec.moveTowards(3, a, b, 0.5);
+    const c = root.moveTowards(a, b, 0.5);
     const expected = root.Vec3{ 0, 0, 0.5 };
-    std.debug.assert(root.vec.eql(3, c, expected));
+    std.debug.assert(root.eql(c, expected));
 }
 
 test "vector perpendicular" {
     const v = root.Vec2{ 0, 1 };
-    const p = root.vec.perpendicular(v);
+    const p = root.perpendicular(v);
     const expected = root.Vec2{ -1, 0 };
-    std.debug.assert(root.vec.eql(2, p, expected));
+    std.debug.assert(root.eql(p, expected));
 }
 
 test "vector project" {
     const v = root.Vec3{ 5, 5, 0 };
     const n = root.Vec3{ 0, 1, 0 };
-    const p = root.vec.project(3, v, n);
+    const p = root.project(v, n);
     const expected = root.Vec3{ 0, 5, 0 };
-    std.debug.assert(root.vec.eql(3, p, expected));
+    std.debug.assert(root.eql(p, expected));
 }
 
 test "vector reflect" {
-    const v = root.vec.normalize(3, root.Vec3{ 1, -1, 0 });
+    const v = root.normalize(root.Vec3{ 1, -1, 0 });
     const n = root.Vec3{ 0, 1, 0 };
-    const r = root.vec.reflect(3, v, n);
-    const expected = root.vec.normalize(3, root.Vec3{ 1, 1, 0 });
-    std.debug.assert(root.vec.eql(3, r, expected));
+    const r = root.reflect(v, n);
+    const expected = root.normalize(root.Vec3{ 1, 1, 0 });
+    std.debug.assert(root.eql(r, expected));
 }
 
 test "vector rotate toward" {
     const a = root.Vec3{ 1, 0, 0 };
     const b = root.Vec3{ 0, 1, 0 };
-    const c = root.vec.rotateToward(3, a, b, std.math.pi * 0.25);
-    const expected = root.vec.normalize(3, root.Vec3{ 0.5, 0.5, 0 });
-    std.debug.assert(root.vec.eql(3, c, expected));
+    const c = root.rotateToward(a, b, std.math.pi * 0.25);
+    const expected = root.normalize(root.Vec3{ 0.5, 0.5, 0 });
+    std.debug.assert(root.eql(c, expected));
 }
 
 test "vector scale" {
-    const v = root.vec.one(3);
-    const scaled = root.vec.scale(3, v, 5);
+    const v: root.Vec3 = @splat(1.0);
+    const scaled = root.scale(v, 5);
     const expected: root.Vec3 = @splat(5.0);
-    std.debug.assert(root.vec.eql(3, scaled, expected));
+    std.debug.assert(root.eql(scaled, expected));
 }
 
 test "vector slerp" {
     const a = root.Vec3{ 1, 0, 0 };
     const b = root.Vec3{ 0, 1, 0 };
-    const c = root.vec.slerp(3, a, b, 0.5);
-    const expected = root.vec.normalize(3, root.Vec3{ 0.5, 0.5, 0 });
-    std.debug.assert(root.vec.eql(3, c, expected));
+    const c = root.slerp(a, b, 0.5);
+    const expected = root.normalize(root.Vec3{ 0.5, 0.5, 0 });
+    std.debug.assert(root.eql(c, expected));
 }
