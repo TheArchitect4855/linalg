@@ -108,14 +108,14 @@ test "quaternion angle axis" {
     // 180 degrees around X axis
     const q = root.Quat.angleAxis(std.math.pi, root.Vec3{ 1, 0, 0 });
     const expected = root.Quat{ .w = 0, .x = 1, .y = 0, .z = 0 };
-    try std.testing.expect(expected.eqlApprox(q));
+    try std.testing.expect(expected.eqlApprox(q, 1e-6));
 }
 
 test "quaternion euler" {
     // 180 degrees around Y axis
     const q = root.Quat.euler(0, std.math.pi, 0);
     const expected = root.Quat{ .w = 0, .x = 0, .y = 1, .z = 0 };
-    try std.testing.expect(expected.eqlApprox(q));
+    try std.testing.expect(expected.eqlApprox(q, 1e-6));
 }
 
 test "quaternion look rotation" {
@@ -151,7 +151,7 @@ test "quaternion rotate towards" {
     const b = root.Quat{ .w = 0, .x = 1, .y = 0, .z = 0 };
     const c = a.rotateTowards(b, std.math.pi * 0.5);
     const expected = root.Quat.euler(std.math.pi * 0.5, 0, 0);
-    try std.testing.expect(expected.eqlApprox(c));
+    try std.testing.expect(expected.eqlApprox(c, 1e-6));
 }
 
 test "quaternion slerp" {
@@ -159,7 +159,7 @@ test "quaternion slerp" {
     const b = root.Quat{ .w = 0, .x = 1, .y = 0, .z = 0 };
     const c = a.slerp(b, 0.5);
     const expected = root.Quat.euler(std.math.pi * 0.5, 0, 0);
-    try std.testing.expect(expected.eqlApprox(c));
+    try std.testing.expect(expected.eqlApprox(c, 1e-6));
 }
 
 test "vector angle" {

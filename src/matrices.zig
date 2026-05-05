@@ -4,7 +4,6 @@ const q = @import("quaternion.zig");
 /// A columm-major 4x4 matrix type.
 pub fn Mat4(N: type) type {
     const Q = q.Quat(N);
-    const epsilon = std.math.floatEps(N) * 5.0;
     const v = @import("vectors.zig").Vectors(N);
 
     return extern struct {
@@ -324,12 +323,10 @@ pub fn Mat4(N: type) type {
             const y = m[1] * point[0] + m[5] * point[1] + m[9] * point[2] + m[13];
             const z = m[2] * point[0] + m[6] * point[1] + m[10] * point[2] + m[14];
             const w = m[3] * point[0] + m[7] * point[1] + m[11] * point[2] + m[15];
-            if (@abs(w) > epsilon) {
-                const inv_w = 1.0 / w;
-                return @Vector(3, N){ x * inv_w, y * inv_w, z * inv_w };
-            }
+            if (w == 0.0) return .{ x, y, z };
 
-            return @Vector(3, N){ x, y, z };
+            const inv_w: @Vector(3, N) = @splat(1.0 / w);
+            return @Vector(3, N){ x, y, z } * inv_w;
         }
     };
 }

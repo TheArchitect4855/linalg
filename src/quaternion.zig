@@ -2,7 +2,6 @@ const std = @import("std");
 
 /// A quaternion.
 pub fn Quat(N: type) type {
-    const epsilon = std.math.floatEps(N) * 5.0;
     const v = @import("vectors.zig").Vectors(N);
     return packed struct {
         const Self = @This();
@@ -129,11 +128,11 @@ pub fn Quat(N: type) type {
         }
 
         /// Returns `true` if `self` is approximately equal to `other`.
-        pub fn eqlApprox(self: Self, other: Self) bool {
-            const w = std.math.approxEqAbs(N, self.w, other.w, epsilon);
-            const x = std.math.approxEqAbs(N, self.x, other.x, epsilon);
-            const y = std.math.approxEqAbs(N, self.y, other.y, epsilon);
-            const z = std.math.approxEqAbs(N, self.z, other.z, epsilon);
+        pub fn eqlApprox(self: Self, other: Self, tolerance: f32) bool {
+            const w = std.math.approxEqAbs(N, self.w, other.w, tolerance);
+            const x = std.math.approxEqAbs(N, self.x, other.x, tolerance);
+            const y = std.math.approxEqAbs(N, self.y, other.y, tolerance);
+            const z = std.math.approxEqAbs(N, self.z, other.z, tolerance);
             return w and x and y and z;
         }
 
@@ -147,16 +146,6 @@ pub fn Quat(N: type) type {
         pub fn inverse(self: Self) Self {
             // For unit quaternions, the inverse is the conjugate
             const len_sq = self.w * self.w + self.x * self.x + self.y * self.y + self.z * self.z;
-
-            // If this is approximately a unit quaternion, just return the conjugate
-            if (std.math.approxEqRel(N, len_sq, 1.0, epsilon)) return Self{
-                .w = self.w,
-                .x = -self.x,
-                .y = -self.y,
-                .z = -self.z,
-            };
-
-            // Otherwise, scale by 1/len_sq
             const inv_len_sq = 1.0 / len_sq;
             return Self{
                 .w = self.w * inv_len_sq,
@@ -207,7 +196,7 @@ pub fn Quat(N: type) type {
         /// Rotates `current` towards `target`, by at most `max_angle_delta` radians. Will not overshoot.
         pub fn rotateTowards(current: Self, target: Self, max_angle_delta: f32) Self {
             const angle_val = current.angle(target);
-            if (angle_val < epsilon) return target;
+            if (angle_val == 0.0) return target;
             if (angle_val <= max_angle_delta) return target;
 
             // Otherwise, we need to do a partial rotation using slerp
@@ -245,7 +234,7 @@ pub fn Quat(N: type) type {
             var factor2 = t;
 
             // If the quaternions are not close, use spherical interpolation
-            if (cos_theta < 1.0 - epsilon) {
+            if (cos_theta < 1.0) {
                 const theta = std.math.acos(cos_theta);
                 const sin_theta = @sin(theta);
 
