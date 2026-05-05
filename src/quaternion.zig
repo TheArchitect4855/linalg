@@ -198,6 +198,28 @@ pub fn Quat(N: type) type {
             };
         }
 
+        /// Multiplies this quaternion by `scalar`.
+        pub fn mulScalar(self: Self, scalar: N) Self {
+            return .{
+                .w = self.w * scalar,
+                .x = self.x * scalar,
+                .y = self.y * scalar,
+                .z = self.z * scalar,
+            };
+        }
+
+        /// Converts `vector` to a pure quaternion and multiplies this
+        /// quaternion with it.
+        pub fn mulVector(self: Self, vector: @Vector(3, N)) Self {
+            const vx, const vy, const vz = vector;
+            return .{
+                .w = -self.x * vx - self.y * vy - self.z * vz,
+                .x = self.w * vx + self.y * vz - self.z * vy,
+                .y = self.w * vy - self.x * vz + self.z * vx,
+                .z = self.w * vz + self.x * vy - self.y * vx,
+            };
+        }
+
         /// Normalizes this quaternion.
         pub fn normalized(self: Self) Self {
             const len = @sqrt(self.w * self.w + self.x * self.x + self.y * self.y + self.z * self.z);
@@ -206,6 +228,18 @@ pub fn Quat(N: type) type {
                 .x = self.x / len,
                 .y = self.y / len,
                 .z = self.z / len,
+            };
+        }
+
+        /// Rotates this quaternion around the axis defined by `axis`. The
+        /// amount of rotation is determined by the magnitude of `axis`.
+        pub fn rotateByAxis(self: Self, axis: @Vector(3, N)) Self {
+            const dq = self.mulVector(axis).mulScalar(0.5);
+            return .{
+                .w = self.w + dq.w,
+                .x = self.x + dq.x,
+                .y = self.y + dq.y,
+                .z = self.z + dq.z,
             };
         }
 
