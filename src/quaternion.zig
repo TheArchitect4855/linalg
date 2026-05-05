@@ -142,6 +142,12 @@ pub fn Quat(N: type) type {
             try writer.print("[ {" ++ fmt ++ "}i {" ++ fmt ++ "} {" ++ fmt ++ "} {" ++ fmt ++ "} ]", .{ self.w, self.x, self.y, self.z });
         }
 
+        /// Returns the imaginary part of this quaternion (i.e. the x, y, z
+        /// components)
+        pub fn imaginary(self: Self) @Vector(3, N) {
+            return .{ self.x, self.y, self.z };
+        }
+
         /// Returns the inverse of this quaternion.
         pub fn inverse(self: Self) Self {
             // For unit quaternions, the inverse is the conjugate
