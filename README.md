@@ -71,7 +71,7 @@ const projection_matrix = linalg.Mat4.orthographic(-0.5, 0.5, -0.5, 0.5, 0.0, 10
 const quaternion = linalg.Quat.euler(0, std.math.pi * 0.5, 0); // Rotate 90 degrees on the Y axis
 
 const vector = linalg.Vec3{1, 2, 3};
-const normalized = linalg.vec.normalize(3, vector); // The 3 is the vector dimension; most functions are generic over all vectors
+const normalized = linalg.normalize(vector);
 ```
 
 Browse the doc comments for more in-depth documentation.
