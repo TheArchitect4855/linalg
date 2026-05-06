@@ -235,12 +235,12 @@ pub fn Quat(N: type) type {
         /// amount of rotation is determined by the magnitude of `axis`.
         pub fn rotateByAxis(self: Self, axis: @Vector(3, N)) Self {
             const dq = self.mulVector(axis).mulScalar(0.5);
-            return .{
+            return (Self{
                 .w = self.w + dq.w,
                 .x = self.x + dq.x,
                 .y = self.y + dq.y,
                 .z = self.z + dq.z,
-            };
+            }).normalized();
         }
 
         /// Returns `point` rotated by this quaternion.
