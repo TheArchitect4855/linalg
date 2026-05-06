@@ -90,55 +90,28 @@ pub fn Mat4(N: type) type {
 
         /// Creates a 3D transformation matrix.
         pub fn transform(translation: @Vector(3, N), rotation: Q, scale: @Vector(3, N)) Self {
-            var result = identity;
+            const rw = rotation.w;
+            const rx = rotation.x;
+            const ry = rotation.y;
+            const rz = rotation.z;
 
-            // Calculate rotation coefficients
-            const xx = rotation.x * rotation.x;
-            const xy = rotation.x * rotation.y;
-            const xz = rotation.x * rotation.z;
-            const xw = rotation.x * rotation.w;
+            var result = [1]f32{0.0} ** 16;
+            result[0] = (1.0 - 2.0 * (ry * ry + rz * rz)) * scale[0];
+            result[1] = (2.0 * (rx * ry + rw * rz)) * scale[0];
+            result[2] = (2.0 * (rx * rz - rw * ry)) * scale[0];
 
-            const yy = rotation.y * rotation.y;
-            const yz = rotation.y * rotation.z;
-            const yw = rotation.y * rotation.w;
+            result[4] = (2.0 * (rx * ry - rw * rz)) * scale[1];
+            result[5] = (1.0 - 2.0 * (rx * rx + rz * rz)) * scale[1];
+            result[6] = (2.0 * (ry * rz + rw * rx)) * scale[1];
 
-            const zz = rotation.z * rotation.z;
-            const zw = rotation.z * rotation.w;
+            result[8] = (2.0 * (rx * rz + rw * ry)) * scale[2];
+            result[9] = (2.0 * (ry * rz - rw * rx)) * scale[2];
+            result[10] = (1.0 - 2.0 * (rx * rx + ry * ry)) * scale[2];
 
-            // Main diagonal
-            result.m[0] = 1.0 - 2.0 * (yy + zz);
-            result.m[5] = 1.0 - 2.0 * (xx + zz);
-            result.m[10] = 1.0 - 2.0 * (xx + yy);
-
-            // Off-diagonal
-            result.m[1] = 2.0 * (xy - zw);
-            result.m[2] = 2.0 * (xz + yw);
-
-            result.m[4] = 2.0 * (xy + zw);
-            result.m[6] = 2.0 * (yz - xw);
-
-            result.m[8] = 2.0 * (xz - yw);
-            result.m[9] = 2.0 * (yz + xw);
-
-            // Apply scale - multiply the first three rows by the scale components
-            result.m[0] *= scale[0];
-            result.m[1] *= scale[0];
-            result.m[2] *= scale[0];
-
-            result.m[4] *= scale[1];
-            result.m[5] *= scale[1];
-            result.m[6] *= scale[1];
-
-            result.m[8] *= scale[2];
-            result.m[9] *= scale[2];
-            result.m[10] *= scale[2];
-
-            // Apply translation
-            result.m[12] = translation[0];
-            result.m[13] = translation[1];
-            result.m[14] = translation[2];
-
-            return result;
+            result[12] = translation[0];
+            result[13] = translation[1];
+            result[14] = translation[2];
+            return .{ .m = result };
         }
 
         // --- PROPERTIES ---
