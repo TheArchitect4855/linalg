@@ -243,6 +243,18 @@ pub fn Quat(N: type) type {
             };
         }
 
+        /// Returns `point` rotated by this quaternion.
+        pub fn rotatePoint(self: Self, point: @Vector(3, N)) @Vector(3, N) {
+            const p = self.mulVector(point);
+
+            // Hamilton product of vector and conjugate of self
+            return .{
+                p.w * -self.x + p.x * self.w + p.y * -self.z - p.z * -self.y,
+                p.w * -self.y - p.x * -self.z + p.y * self.w + p.z * -self.x,
+                p.w * -self.z + p.x * -self.y - p.y * -self.x + p.z * self.w,
+            };
+        }
+
         /// Rotates `current` towards `target`, by at most `max_angle_delta` radians. Will not overshoot.
         pub fn rotateTowards(current: Self, target: Self, max_angle_delta: f32) Self {
             const angle_val = current.angle(target);
