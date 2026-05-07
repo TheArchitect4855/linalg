@@ -1,8 +1,10 @@
 const std = @import("std");
+const matrices = @import("matrices.zig");
 
 pub fn With(N: type) type {
     return struct {
-        pub const Mat4 = @import("matrices.zig").Mat4(N);
+        pub const Mat3 = matrices.Mat3(N);
+        pub const Mat4 = matrices.Mat4(N);
         pub const Quat = @import("quaternion.zig").Quat(N);
         pub const Vec2 = @Vector(2, N);
         pub const Vec3 = @Vector(3, N);

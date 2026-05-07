@@ -1,6 +1,86 @@
 const std = @import("std");
 const q = @import("quaternion.zig");
 
+/// A column-major 3x3 matrix type.
+pub fn Mat3(N: type) type {
+    return extern struct {
+        const Self = @This();
+
+        pub const identity = Self{ .m = .{ 1, 0, 0, 0, 1, 0, 0, 0, 1 } };
+        pub const zero = Self{ .m = .{ 0, 0, 0, 0, 0, 0, 0, 0, 0 } };
+
+        m: [9]N,
+
+        // --- CONSTRUCTORS ---
+
+        /// Utility to initialize a matrix row-by-row. This essentially tranposes the input
+        /// so that the matrix is stored in column-major order.
+        pub fn initRows(x: [4]f32, y: [4]f32, z: [4]f32) Self {
+            return .{
+                .m = .{
+                    x[0], y[0], z[0], //
+                    x[1], y[1], z[1], //
+                    x[2], y[2], z[2], //
+                    x[3], y[3], z[3], //
+                },
+            };
+        }
+
+        // --- PROPERTIES ---
+
+        /// Returns the transpose of this matrix.
+        pub fn transpose(self: Self) Self {
+            var result: Self = undefined;
+            inline for (0..3) |row| {
+                inline for (0..3) |col| {
+                    result.m[col * 3 + row] = self.m[row * 3 + col];
+                }
+            }
+
+            return result;
+        }
+
+        // --- METHODS ---
+
+        /// Returns true if `self` is exactly equal to `other`.
+        pub fn eql(self: Self, other: Self) bool {
+            return std.mem.eql(N, &self.m, &other.m);
+        }
+
+        /// Format function for printing. One can use the `{d}` format specifier in the same was as printing a number.
+        pub fn format(self: Self, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
+            _ = options;
+            try writer.print("[[ {" ++ fmt ++ "} {" ++ fmt ++ "} {" ++ fmt ++ "} ]\n", .{ self.m[0], self.m[3], self.m[6] });
+            try writer.print(" [ {" ++ fmt ++ "} {" ++ fmt ++ "} {" ++ fmt ++ "} ]\n", .{ self.m[1], self.m[4], self.m[7] });
+            try writer.print(" [ {" ++ fmt ++ "} {" ++ fmt ++ "} {" ++ fmt ++ "} ]\n", .{ self.m[2], self.m[5], self.m[8] });
+            try writer.print(" [ {" ++ fmt ++ "} {" ++ fmt ++ "} {" ++ fmt ++ "} ]]", .{ self.m[3], self.m[6], self.m[9] });
+        }
+
+        /// Returns `self` * `other`.
+        pub fn mul(self: Self, other: Self) Self {
+            var result: @Vector(16, f32) = undefined;
+            inline for (0..3) |col| {
+                inline for (0..3) |row| {
+                    var sum: f32 = 0.0;
+                    inline for (0..3) |i| sum += self.m[i * 3 + row] * other.m[col * 3 + i];
+                    result[col * 3 + row] = sum;
+                }
+            }
+
+            return .{ .m = result };
+        }
+
+        /// Multiplies a point by this matrix.
+        pub fn multiplyPoint(self: Self, point: @Vector(3, N)) @Vector(3, N) {
+            const m = self.m;
+            const x = m[0] * point[0] + m[3] * point[1] + m[6] * point[2];
+            const y = m[1] * point[0] + m[4] * point[1] + m[7] * point[2];
+            const z = m[2] * point[0] + m[5] * point[1] + m[8] * point[2];
+            return .{ x, y, z };
+        }
+    };
+}
+
 /// A columm-major 4x4 matrix type.
 pub fn Mat4(N: type) type {
     const Q = q.Quat(N);
