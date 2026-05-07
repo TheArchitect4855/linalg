@@ -102,6 +102,20 @@ pub fn With(N: type) type {
             return v / len;
         }
 
+        /// Returns the orthonormal basis constructed from `v`.
+        pub fn orthonormalBasis(v: Vec3) struct {
+            tangent: Vec3,
+            bitangent: Vec3,
+        } {
+            const s = if (std.math.signbit(v[2])) @as(f32, -1.0) else @as(f32, 1.0);
+            const a = -1.0 / (s + v[2]);
+            const b = v[0] * v[1] * a;
+            return .{
+                .tangent = Vec3{ 1.0 + s * v[0] * v[0] * a, s * b, -s * v[0] },
+                .bitangent = Vec3{ b, s + v[1] * v[1] * a, -v[1] },
+            };
+        }
+
         /// Returns the 2D vector perpendicular to `v`. This is equivalent to
         /// rotating `v` 90 degrees counter-clockwise.
         pub fn perpendicular(v: Vec2) Vec2 {
