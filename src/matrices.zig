@@ -28,6 +28,31 @@ pub fn Mat3(N: type) type {
 
         // --- PROPERTIES ---
 
+        pub fn inverse(self: Self) Self {
+            const a = self.m[0];
+            const b = self.m[1];
+            const c = self.m[2];
+            const d = self.m[3];
+            const e = self.m[4];
+            const f = self.m[5];
+            const g = self.m[6];
+            const h = self.m[7];
+            const i = self.m[8];
+
+            const inv_det = 1.0 / (a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g));
+            var result: [9]f32 = undefined;
+            result[0] = (e * i - f * h) * inv_det;
+            result[1] = -(b * i - c * h) * inv_det;
+            result[2] = (b * f - c * e) * inv_det;
+            result[3] = -(d * i - f * g) * inv_det;
+            result[4] = (a * i - c * g) * inv_det;
+            result[5] = -(a * f - c * d) * inv_det;
+            result[6] = (d * h - e * g) * inv_det;
+            result[7] = -(a * h - b * g) * inv_det;
+            result[8] = (a * e - b * d) * inv_det;
+            return .{ .m = result };
+        }
+
         /// Returns the transpose of this matrix.
         pub fn transpose(self: Self) Self {
             var result: Self = undefined;
@@ -58,15 +83,22 @@ pub fn Mat3(N: type) type {
 
         /// Returns `self` * `other`.
         pub fn mul(self: Self, other: Self) Self {
-            var result: @Vector(16, f32) = undefined;
+            var result: [9]N = undefined;
             inline for (0..3) |col| {
                 inline for (0..3) |row| {
-                    var sum: f32 = 0.0;
+                    var sum: N = 0.0;
                     inline for (0..3) |i| sum += self.m[i * 3 + row] * other.m[col * 3 + i];
                     result[col * 3 + row] = sum;
                 }
             }
 
+            return .{ .m = result };
+        }
+
+        /// Multiplies all elements in `self` with `scalar`.
+        pub fn mulScalar(self: Self, scalar: N) Self {
+            var result: [9]N = undefined;
+            inline for (0..9) |i| result[i] = self.m[i] * scalar;
             return .{ .m = result };
         }
 
