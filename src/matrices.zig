@@ -223,6 +223,7 @@ pub fn Mat4(N: type) type {
             result[12] = translation[0];
             result[13] = translation[1];
             result[14] = translation[2];
+            result[15] = 1;
             return .{ .m = result };
         }
 
