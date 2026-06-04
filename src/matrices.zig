@@ -116,8 +116,8 @@ pub fn Mat3(N: type) type {
 /// A columm-major 4x4 matrix type.
 pub fn Mat4(N: type) type {
     const Q = q.Quat(N);
-    const v = @import("vectors.zig").Vectors(N);
 
+    const v = @import("root.zig").With(N);
     return extern struct {
         const Self = @This();
 
@@ -143,7 +143,7 @@ pub fn Mat4(N: type) type {
 
         /// Creates a "look at" matrix at position `from` looking at `to`.
         pub fn lookAt(from: @Vector(3, N), to: @Vector(3, N), up: @Vector(3, N)) Self {
-            const forward = v.normalize(3, from - to);
+            const forward = v.normalize(from - to);
             const right = v.cross(up, forward);
             const new_up = v.cross(forward, right);
 
@@ -162,9 +162,9 @@ pub fn Mat4(N: type) type {
             result.m[10] = forward[2];
 
             // Apply translation
-            result.m[12] = -v.dot(3, right, from);
-            result.m[13] = -v.dot(3, new_up, from);
-            result.m[14] = -v.dot(3, forward, from);
+            result.m[12] = -v.dot(right, from);
+            result.m[13] = -v.dot(new_up, from);
+            result.m[14] = -v.dot(forward, from);
 
             return result;
         }

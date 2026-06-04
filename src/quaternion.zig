@@ -2,7 +2,7 @@ const std = @import("std");
 
 /// A quaternion.
 pub fn Quat(N: type) type {
-    const v = @import("vectors.zig").Vectors(N);
+    const v = @import("root.zig").With(N);
     return packed struct {
         const Self = @This();
 
