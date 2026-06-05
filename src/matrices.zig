@@ -187,16 +187,15 @@ pub fn Mat4(N: type) type {
         }
 
         /// Creates a perspective projection matrix. `fov` is in radians.
-        pub fn perspective(aspect: N, fov: N, near: N, far: N) Self {
-            const tan_half_fov = std.math.tan(fov / 2.0);
+        pub fn perspective(aspect: N, fov: N, near: N, far: N, w_min: N, w_max: N) Self {
+            const tan_half_fov = std.math.tan(fov * 0.5);
 
             var result = zero;
-            result.m[0] = 1.0 / (aspect * tan_half_fov);
-            result.m[5] = 1.0 / tan_half_fov;
-            result.m[10] = -(far + near) / (far - near);
-            result.m[11] = -1.0;
-            result.m[14] = -(2.0 * far * near) / (far - near);
-            result.m[15] = 0.0;
+            result.m[0] = 1.0 / (aspect * tan_half_fov); // xx
+            result.m[5] = 1.0 / tan_half_fov; // yy
+            result.m[10] = -(w_max - w_min) / (far - near); // zz
+            result.m[11] = -1.0; // wz
+            result.m[14] = near * (w_max - w_min) / (far - near) - w_min; // zw
             return result;
         }
 

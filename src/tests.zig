@@ -28,11 +28,11 @@ test "matrix orthographic" {
 }
 
 test "matrix perspective" {
-    const m = root.Mat4.perspective(1.0, std.math.pi * 0.5, -1.0, 1.0);
+    const m = root.Mat4.perspective(1.0, std.math.pi * 0.5, -1.0, 1.0, -1.0, 1.0);
     const expected = root.Mat4.initRows(
         .{ 1, 0, 0, 0 },
         .{ 0, 1, 0, 0 },
-        .{ 0, 0, 0, 1 },
+        .{ 0, 0, -1, 0 },
         .{ 0, 0, -1, 0 },
     );
     try std.testing.expectEqualDeep(expected, m);
