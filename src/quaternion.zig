@@ -53,61 +53,41 @@ pub fn Quat(N: type) type {
         /// Creates a quaternion "looking" in the direction defined by `forward` and `up`.
         pub fn lookRotation(forward: @Vector(3, N), up: @Vector(3, N)) Self {
             const right = v.cross(up, forward);
-            const new_up = v.cross(forward, right);
+            const yaw = v.cross(forward, right);
 
-            // Construct the rotation matrix
-            var m: [3][3]N = undefined;
+            const x = right[0] - yaw[1] - forward[2];
+            const y = -right[0] + yaw[1] - forward[2];
+            const z = -right[0] - yaw[1] + forward[2];
+            const w = right[0] + yaw[1] + forward[2];
 
-            // First row is the right vector
-            m[0][0] = right[0];
-            m[0][1] = right[1];
-            m[0][2] = right[2];
-
-            // Second row is the up vector
-            m[1][0] = new_up[0];
-            m[1][1] = new_up[1];
-            m[1][2] = new_up[2];
-
-            // Third row is the forward vector
-            m[2][0] = forward[0];
-            m[2][1] = forward[1];
-            m[2][2] = forward[2];
-
-            // Convert the rotation matrix to a quaternion
-            const trace = m[0][0] + m[1][1] + m[2][2];
-            if (trace > 0) {
-                const s = 0.5 / @sqrt(trace + 1.0);
-                return Self{
-                    .w = 0.25 / s,
-                    .x = (m[2][1] - m[1][2]) * s,
-                    .y = (m[0][2] - m[2][0]) * s,
-                    .z = (m[1][0] - m[0][1]) * s,
-                };
-            } else if (m[0][0] > m[1][1] and m[0][0] > m[2][2]) {
-                const s = 2.0 * @sqrt(1.0 + m[0][0] - m[1][1] - m[2][2]);
-                return Self{
-                    .w = (m[2][1] - m[1][2]) / s,
-                    .x = 0.25 * s,
-                    .y = (m[0][1] + m[1][0]) / s,
-                    .z = (m[0][2] + m[2][0]) / s,
-                };
-            } else if (m[1][1] > m[2][2]) {
-                const s = 2.0 * @sqrt(1.0 + m[1][1] - m[0][0] - m[2][2]);
-                return Self{
-                    .w = (m[0][2] - m[2][0]) / s,
-                    .x = (m[0][1] + m[1][0]) / s,
-                    .y = 0.25 * s,
-                    .z = (m[1][2] + m[2][1]) / s,
-                };
-            } else {
-                const s = 2.0 * @sqrt(1.0 + m[2][2] - m[0][0] - m[1][1]);
-                return Self{
-                    .w = (m[1][0] - m[0][1]) / s,
-                    .x = (m[0][2] + m[2][0]) / s,
-                    .y = (m[1][2] + m[2][1]) / s,
-                    .z = 0.25 * s,
-                };
+            var index: usize = 0;
+            var largest = w;
+            if (x > largest) {
+                largest = x;
+                index = 1;
             }
+            if (y > largest) {
+                largest = y;
+                index = 2;
+            }
+            if (z > largest) {
+                largest = z;
+                index = 3;
+            }
+
+            largest = @sqrt(largest + 1) * 0.5;
+            const m = 0.25 / largest;
+            return (switch (index) {
+                0 => Self.wxyz(largest, (yaw[2] - forward[1]) * m, (forward[0] - right[2]) * m, (right[1] - yaw[0]) * m),
+                1 => Self.wxyz((yaw[2] - forward[1]) * m, largest, (right[1] + yaw[0]) * m, (forward[0] + right[2]) * m),
+                2 => Self.wxyz((forward[0] - right[2]) * m, (right[1] + yaw[0]) * m, largest, (yaw[2] + forward[1]) * m),
+                3 => Self.wxyz((right[1] - yaw[0]) * m, (forward[0] + right[2]) * m, (yaw[2] + forward[1]) * m, largest),
+                else => unreachable,
+            }).normalized();
+        }
+
+        pub fn wxyz(w: N, x: N, y: N, z: N) Self {
+            return .{ .w = w, .x = x, .y = y, .z = z };
         }
 
         // --- METHODS ---
