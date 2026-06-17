@@ -170,19 +170,17 @@ pub fn Mat4(N: type) type {
         }
 
         /// Creates an orthographic projection matrix.
-        pub fn orthographic(left: N, right: N, bottom: N, top: N, near: N, far: N) Self {
-            var result = identity;
-
-            // Scale
+        pub fn orthographic(left: N, right: N, bottom: N, top: N, near: N, far: N, clip_min: N, clip_max: N) Self {
+            var result = zero;
             result.m[0] = 2.0 / (right - left);
             result.m[5] = 2.0 / (top - bottom);
-            result.m[10] = -2.0 / (far - near);
+            result.m[10] = (clip_min - clip_max) / (far - near);
 
-            // Translation
             result.m[12] = -(right + left) / (right - left);
             result.m[13] = -(top + bottom) / (top - bottom);
-            result.m[14] = -(far + near) / (far - near);
+            result.m[14] = (far * clip_min - near * clip_max) / (far - near);
 
+            result.m[15] = 1;
             return result;
         }
 
